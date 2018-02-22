@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252"><meta charset="windows-1252">
+<!--[if lt IE 9]>         <html class="lt-ie9"> <![endif]-->
+<!--
+Some legalese:
+    MTurk experiment code
+    Copyright (C) 2014 Sebastian Bobadilla / Lukasz Kopec / TimTurkTools by Tim Brady
+    / Fullscreen plugin by kayahr
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+Did you really get all the way here? Well done for being technically-minded,
+but we would appreciate if you didn't try to cheat by exploiting this experiment.
+
+I'm sure it's not 100% secured against any attempts to tamper with it,
+after all we are just simple researchers and we rely on you helping us out
+with our data collection.
+
+If you have any questions about this experiment, please do not hesitate
+to contact us.
+
+If you're here to re-use some code for your own Mechanical Turk experiments,
+please feel free to re-use it, modify it, but *DO OBSERVE THE GPL v3 ABOVE*
+and attribute it to the original author/s
+With any questions regarding this experiment or its code, contact Sebastian:
+sebastian dot suarez dot 12 #the at-character# ucl dot ac dot uk
+-->
+
+<script src="climatChange_files/jquery.js"></script>
+<script src="climatChange_files/TimTurkTools.js"></script>
+<script src="climatChange_files/jquery_002.js" type="text/javascript" charset="utf-8"></script> 
+<script src="climatChange_files/climateStim.js"></script>
+<script src="climatChange_files/permProbs.js"></script>
+
+<script>
+var debug = 0; //set to 0 for normal experiment mode
+var startExp = new Date();
+var clicked=0;
+var firstRT=[];
+var secondRT=[];
+var firstEst="";
+var secondEst="";
+var estimate1="";
+var estimate2="";
+var trialTypez=[];
+var minProb = 5;
+var maxProb = 95;
+var startExpTime = new Date().getTime();
+var slowLimit=25000;//15000;   
+var tooSlow1; var tooSlow2;
+
+min = 0;
+max = permProbs.length;
+rand1 = (Math.floor(Math.random() * (max - min +1)) + min);
+rand2 = (Math.floor(Math.random() * (max - min +1)) + min);
+var interval1 = permProbs[rand1]; //gets random integer
+var interval2 = permProbs[rand2]; //gets random integer
+var intervalOne = permProbs[rand1] + 'ENDS HERE|||---';
+var intervalTwo = permProbs[rand2] + 'ENDS HERE|||---';
+
+var currentTrial = -3;//accounts for practice trials
+var pracTrialCorrect = pracStim.length; ///accounts for practice 
+
+var lowEnd = 0;
+var highEnd = allStim.length - 1;
+var order = [];
+while(lowEnd <= highEnd){
+   order.push(lowEnd++);
+}
+order = Shuffle(order);
+
+
+    /* From http://stackoverflow.com/questions/979975/how-to-get-the-value-from-url-parameter */
+function getQueryParams(qs) {
+    qs = qs.split("+").join(" ");
+
+    var params = {}, tokens,
+        re = /[?&]?([^=]+)=([^&]*)/g;
+
+    while (tokens = re.exec(qs)) {
+        params[decodeURIComponent(tokens[1])]
+            = decodeURIComponent(tokens[2]);
+    }
+
+    return params;
+}
+
+var query = getQueryParams(document.location.search);
+//ps_id = query.ps_id;
+var mturk_id = query.mturk_id;
+var assignmentId = query.assignmentId;
+var hitId = query.hitId;
+//if (mturk_id==="" || mturk_id==="undefined"){mturk_id = query.workerId;}
+/* Now if you open url baseballStudy.html?ps_id=123&mturk_id=AAABBB, ps_id would be 123 abd mturk_id AAABBB */
+
+/* Change the location of php accordingly */
+$.ajax({
+	type: "POST",
+	url: "https://experiments.affectivebrain.com/check_id2.php",
+	data: {
+	    'mturkid': mturk_id
+	},
+	success: function(resp2) {
+	    /* Do something with the response */
+	    if (resp2 === 'true') {
+                hideAll();
+	    	$('#sorry2').show(); //change to sorry2 for kicking out previous turkers
+	    }
+            else{
+               getSub(); 
+            }
+	    console.log(resp2);
+            
+	}
+});
+
+function getSub(){
+    $.ajax({
+	type: "POST",
+	url: "https://experiments.affectivebrain.com/getSubNo.php",
+	success: function(resp) {
+         sub = resp;
+	    console.log(resp);
+           sub = parseInt(sub);
+           
+           if (mturk_id==="" || mturk_id===undefined){
+    mturk_id = 'nomturkid' + sub;
+}
+//var sub = 0; //this should be determined by reading how many subs we have so far from our SQL server
+if (sub>3000){   $('#consent_form').hide();  //be sure to check this number!!!********************************
+	    	$('#busy').show(); }
+
+	}
+});
+}
+
+function timeLimit(){
+hideAll();       
+        $('#sorry3').show();
+}
+
+    $(document).ready(function(){
+        $("body").show();
+        hideAll();
+        $('#consent_form').show(); 
+        //intro(introTrack); //only for debugging go straight into experiment**********************************************
+        //example(exampleTrack); //only for debugging go straight into experiment******
+        setTimeout(timeLimit,3600000); //experiment expires after an hour
+});
+
+function hideAll(){
+        $('#consent_form').hide();
+        $('#busy').hide();
+        $('#sorry2').hide();
+        $('#sorry3').hide();
+        $('#questions').hide();
+        $('#questions2').hide();
+        $('#noconsent').hide();
+        $('#underAge').hide();
+    	$('#event').hide();
+        $('#input_estimate').hide();
+        $('#two_sources').hide();
+        $('#input_estimate2').hide();
+        $('#thankYou').hide();
+        $('#Intro1').hide(); $('#Intro2').hide(); $('#Intro3').hide(); $('#Intro4').hide(); 
+        $('#examplez0').hide(); $('#examplez-1').hide();
+        $('#examplez1').hide(); $('#examplez2').hide(); $('#examplez3').hide(); $('#examplez4').hide(); $('#examplez5').hide();
+        $('#walkthrough').hide();
+        $('#Cross').hide();
+        $('#continue').hide();
+        $('#Start').hide();
+        $('#ques').hide();
+        $('#lotr').hide();
+        $('#bdi').hide();
+        $('#debrief').hide(); 
+        $('#debriefEND').hide();
+	$('#turkNum').hide();
+        $('#validNum').hide();
+        $('#apologies').hide();
+        $('#slow').hide();
+        $('#alert').hide();
+        $('#valid').hide();
+        }
+        
+function introExp(){
+    clicked = 1;
+    questions();
+}
+
+var expRunning;
+function questions() {
+
+        if(clicked){          
+            
+             expRunning = true;
+             //$(document).fullScreen(true);
+            $('#consent_form').hide();
+                $('#questions').show();
+    
+    $('.noEnterSubmit').keypress(function(e){
+    if ( e.which === 13 ) return false;
+});
+
+    } else if (clicked){
+        alert("Please also tick the consent box.");
+    } else {
+        $('#noconsent').show();
+        $('#consent_form').hide();
+    }
+}     
+
+function chk_questions(){
+    if(!$('input[name=sex]:checked', '#questions').is(':checked')
+            || !$('#age').val() || !$('input[name=education]:checked', '#questions').is(':checked')
+    || !$('input[name=marital]:checked', '#questions').is(':checked')  || !$('input[name=employment]:checked', '#questions').is(':checked')
+    || !$('#income').val()
+    || !$('input[name=politics]:checked', '#questions').is(':checked')
+            ) {console.log(1); questions(); alert("Please answer the whole form.");return;}
+    
+    age = $("input#age").val(); age = parseInt(age);
+    
+        if( age>150 || !isInteger(age) ) {console.log(2); questions();
+            $('#age').val('');
+            alert("Please enter a valid age.");return;}
+    
+    sex = $('input[name=sex]:checked', '#questions').val();
+    education = $('input[name=education]:checked', '#questions').val();   
+    marital = $('input[name=marital]:checked', '#questions').val();
+    employment = $('input[name=employment]:checked', '#questions').val();
+    income = $("input#income").val(); income = parseInt(income);      
+    politics = $('input[name=politics]:checked', '#questions').val();
+    other_politics = $("input#other_politics").val();
+    
+    if (age<18) {    hideAll();  
+    $('#underAge').show(); }
+    else{
+            envQs();
+    }
+}
+
+function envQs(){
+    hideAll();
+            $('#questions2').show();
+                     window.scrollTo(0,0);
+    envQues = [];
+                     
+  $('.noEnterSubmit').keypress(function(e){
+    if ( e.which === 13 ) return false;
+});
+}
+
+function chk_questions2(){
+    
+        if(!$('input[name=envQ1]:checked', '#questions2').is(':checked') || !$('input[name=envQ2]:checked', '#questions2').is(':checked')
+             || !$('input[name=envQ3]:checked', '#questions2').is(':checked') || !$('input[name=envQ4]:checked', '#questions2').is(':checked')
+              || !$('input[name=envQ5]:checked', '#questions2').is(':checked') || !$('input[name=envQ6]:checked', '#questions2').is(':checked')
+               || !$('input[name=envQ7]:checked', '#questions2').is(':checked') || !$('input[name=envQ8]:checked', '#questions2').is(':checked')
+                || !$('input[name=envQ9]:checked', '#questions2').is(':checked') || !$('input[name=envQ10]:checked', '#questions2').is(':checked')
+                 || !$('input[name=envQ11]:checked', '#questions2').is(':checked') || !$('input[name=envQ12]:checked', '#questions2').is(':checked')
+            ) 
+    {console.log('envQs'); envQs(); alert("Please answer the whole form.");return;}  
+    
+        envQues = envQues.concat($('input[name=envQ1]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ2]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ3]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ4]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ5]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ6]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ7]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ8]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ9]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ10]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ11]:checked', '#questions2').val());
+        envQues = envQues.concat($('input[name=envQ12]:checked', '#questions2').val());
+
+        example(exampleTrack);
+}
+
+function intro(counter){
+    hideAll();
+    $('#Intro' + (counter-1)).hide();
+    $('#Intro' + counter).show();
+    
+            $(document).one('keyup',function(e){
+            key  = e.keyCode;
+            if(key === 13 && counter!==4){
+                introTrack++;
+                intro(introTrack);}
+            else if(key === 13 && counter===4) {
+            //cross();    
+            example(exampleTrack);
+            }
+                else{
+                   intro(introTrack); 
+                }
+          });
+          
+}
+
+badNum=0;
+var introTrack = 1; //intro instructions
+var exampleTrack = 0;
+    sourceL_example = (Math.floor(Math.random() * (95 - 5 +1)) + 5);
+    sourceR_example = (Math.floor(Math.random() * (95 - 5 +1)) + 5);
+function example(counter2){
+        hideAll();
+        
+        if(badNum===1){$('#alert').show();}
+        else{$('#alert').hide();}
+    
+        $('#examplez' + (counter2-1)).hide();
+    $('#examplez' + counter2).show();
+    
+     document.getElementById('two_sources_example').innerHTML='First Source:&nbsp' + sourceL_example + '&nbsp%' 
+                + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp\n\
+    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' 
+            + 'Second Source:&nbsp' + sourceR_example + '&nbsp%'; 
+    
+    if(exampleTrack===1){var text_input = document.getElementById ('firstEstimate_example');
+     sendCursorToEnd(text_input);}
+    else if(exampleTrack===2){var text_input = document.getElementById ('secondEstimate_example');
+      sendCursorToEnd(text_input);}
+    
+      $(document).one('keyup',function(e){
+            key  = e.keyCode;
+            if(key === 13 && counter2!==3){
+            
+            if(exampleTrack===1){
+            firstEst_example = $("input#firstEstimate_example").val();
+            firstEst_example = parseInt(firstEst_example);}
+                
+                if(exampleTrack===1 && !chk_val(firstEst_example))
+                {$('#firstEstimate_example').val(''); exampleTrack--; 
+                    badNum=1;} else{badNum=0;}
+            
+            if(exampleTrack===2){
+            secondEst_example = $("input#secondEstimate_example").val();
+            secondEst_example = parseInt(secondEst_example);}
+                
+                if(exampleTrack===2 && !chk_val(secondEst_example))
+                {$('#secondEstimate_example').val(''); exampleTrack--; 
+                badNum=1;}    else{badNum=0;}
+                        
+                exampleTrack++;
+                example(exampleTrack);}
+            else if(key === 13 && counter2===3) {
+                cross();
+            }
+                else{
+                   example(counter2); 
+                }
+          });
+}
+
+  function start() {
+        hideAll();
+        $('#Start').show();
+     startFS = $(document).fullScreen();
+     
+                $(document).one('keyup',function(e){
+            key  = e.keyCode;
+            if(key === 13){
+                cross();}
+                else{
+                   start(); 
+                }
+          });      
+     }
+     
+function cross(){
+         hideAll();
+        $('#Cross').show(); 
+        setTimeout(preShowEvent,500);
+        }     
+     
+function preShowEvent(){
+    startTrialTime1 = new Date().getTime();        
+        showEvent();
+}     
+
+function sendCursorToEnd(obj) { 
+var value = obj.value; //store the value of the element
+var message = "";
+if (value !== "") {
+    message = value + "\n";
+};
+$(obj).focus().val(message);}
+
+function showEvent(){
+     hideAll();
+     if (currentTrial<0){
+         document.getElementById('event').innerHTML=pracStim[currentTrial+pracTrialCorrect]; 
+     }
+     else{
+    document.getElementById('event').innerHTML=allStim[order[currentTrial]]; 
+     }
+     
+     console.log(currentTrial);
+     
+     $('#event').show();
+     $('#input_estimate').show();
+     
+             if(badNum===1){$('#alert').show();}
+        else{$('#alert').hide();}
+     
+    
+      var text_input = document.getElementById ('firstEstimate');
+        sendCursorToEnd(text_input);
+     
+     $('#firstEstimate').one('keyup', function(e){
+         
+            firstEst = $("input#firstEstimate").val();
+            firstEst = parseInt(firstEst);
+
+          if(e.keyCode === 13 && chk_val(firstEst)){
+
+            $('#firstEstimate').val(''); 
+            estimate1 = estimate1.concat(firstEst + ",");
+            var currentTime = new Date().getTime();
+            RTone = currentTime - startTrialTime1;
+            firstRT = firstRT.concat(RTone);
+            
+            badNum=0;
+            
+            if (currentTrial<0){
+                trialType = 1;
+                setTimeout(getProbs(trialType),500);}
+            else{
+                trialType = permTrialTypes[sub][currentTrial];
+                trialTypez = trialTypez.concat(trialType);
+                setTimeout(getProbs(trialType),500);
+            }
+            }
+            
+          else if (e.keyCode === 13 && !chk_val(firstEst)){badNum=1; 
+                $('#firstEstimate').val(''); 
+                showEvent();
+                        }
+            
+                else{
+                   showEvent();
+                }
+          });
+}
+
+  function isInteger(x) {
+        return (typeof x === 'number') && (x % 1 === 0);
+    }
+    
+function chk_val(val){
+            if( val>maxProb || val<minProb || !isInteger(val) ) { 
+                //alert("Please enter a valid answer (number between 5 and 95).");
+                //valid_ans();
+                
+            return false;
+        }
+        else{return true;}
+    }
+    
+function valid_ans(){
+    hideAll();
+    $('#alert').show();
+    
+    setTimeout(1000);
+   //     $(document).one('keyup', function(e){  
+    //    if(e.keyCode === 78){
+    //        return;
+    //    }
+    //    else{
+    //        valid_ans();
+    //    }
+    //    });
+}
+
+ function getProbs(trialTypez){
+     hideAll();
+     
+             switch(trialType){
+         case 1:
+             carry1temp = carry1;
+             carry2temp = carry2;   
+             interval1temp1 = interval1[0];
+             interval2temp1 = interval2[0];
+                 break;
+             case 2:
+             carry1temp = carry1;
+             interval1temp1 = interval1[0];
+             interval1temp2 = interval1[1];
+             break;
+         case 3:
+             carry2temp = carry2;
+             interval2temp1 = interval2[0];
+             interval2temp2 = interval2[1];
+             break;
+     }
+     
+     if(RTone>slowLimit){
+         hideAll();
+        $('#slow').show();
+        
+    $(document).one('keyup', function(e){  
+        if(e.keyCode === 78){
+        estimate2 = estimate2.concat("NaN,");
+        secondRT = secondRT.concat("NaN");
+        sourcesLeft = sourcesLeft.concat("NaN");
+        sourcesRight = sourcesRight.concat("NaN");
+        currentTrial++;
+        
+        resetIntervals();
+        
+        carryOne = carryOne.concat(carry1);
+        carryTwo = carryTwo.concat(carry2);
+       
+    if(currentTrial<0){        
+        switch(trialType){
+         case 1:
+         interval1.splice(0,1);
+         interval2.splice(0,1);
+         break;
+     case 2:
+         interval1.splice(0,1);
+         interval1.splice(0,1);
+         break;
+     case 3:
+         interval2.splice(0,1);
+         interval2.splice(0,1);
+         break;}
+ }
+         
+          if (currentTrial===0){
+            setTimeout(start(),3000);}
+      else if(currentTrial===(allStim.length)){setTimeout(ques(),3000);}
+      else{
+    setTimeout(cross(),3000);}
+        }
+        else{
+            getProbs(trialType);
+        }
+        });
+    
+        }
+    else{
+
+     switch(trialTypez){
+         case 1:
+         belowEst(); //
+         source1 = sourceTemp1;
+         overEst(); //
+         source2 = sourceTemp2;
+         break;
+    
+         case 2:
+         belowEst(); //
+         source1 = sourceTemp1;
+         belowEst(); //
+         source2 = sourceTemp1;
+         break;
+
+         case 3:
+         overEst();
+         source1 = sourceTemp2;
+         overEst();
+         source2 = sourceTemp2;
+         break;
+     }
+     coinFlip = Math.floor( Math.random() * ( 1 + 2 - 1 ) ) + 1;
+                
+    preShowProbs();}
+ }
+ 
+ carry1 = 0;
+ function belowEst(){   
+     if(currentTrial<0){
+     proposal1 = firstEst - interval1[Math.floor(Math.random() * (interval1.length))] - carry1; //
+ }
+ else if(currentTrial===0){
+     carry1 = 0;
+     proposal1 = firstEst - interval1[0] - carry1; //
+      interval1.splice(0,1);
+ }
+ else{
+     proposal1 = firstEst - interval1[0] - carry1; //
+      interval1.splice(0,1);
+ }
+     
+     if (proposal1<minProb){
+         sourceTemp1 = minProb;
+         carry1 = minProb - proposal1;
+     } else{sourceTemp1 = proposal1; carry1 = 0;} //
+ }
+ 
+  carry2 = 0;
+ function overEst(){   
+          if(currentTrial<0){
+     proposal2 = firstEst + interval2[Math.floor(Math.random() * (interval2.length))] + carry2; //
+ }
+ else if(currentTrial===0){
+     carry2 = 0;
+     proposal2 = firstEst + interval2[0] + carry2; //
+     interval2.splice(0,1);
+ }
+ else{
+     proposal2 = firstEst + interval2[0] + carry2; //
+     interval2.splice(0,1);
+ }  
+ 
+     if (proposal2>maxProb){
+         sourceTemp2 = maxProb;
+         carry2 = proposal2 - maxProb;
+     } else{sourceTemp2 = proposal2; carry2 = 0;} //
+ }
+ 
+ function preShowProbs(){
+        startTrialTime2 = new Date().getTime();
+        showProbs();
+ }
+ 
+ var sourcesLeft=[];
+ var sourcesRight=[];
+ var sourceOne=[];
+ var sourceTwo=[];
+function showProbs(){
+    hideAll();
+
+    if(coinFlip===1){
+        sourceL = source1;
+        sourceR = source2;
+    }else{sourceL = source2;
+    sourceR = source1;}
+     
+     $('#event').show();
+     $('#two_sources').show();
+     $('#input_estimate2').show();
+     
+             if(badNum===1){$('#alert').show();}
+        else{$('#alert').hide();}
+     
+       var text_input = document.getElementById ('secondEstimate');
+        sendCursorToEnd(text_input);
+    
+    if (currentTrial<0){
+        document.getElementById('two_sources').innerHTML='First Source:&nbsp' + sourceL + '&nbsp'
+                + pracStimType[currentTrial+pracTrialCorrect] 
+                + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp\n\
+    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' 
+            + 'Second Source:&nbsp' + sourceR + '&nbsp' 
+            + pracStimType[currentTrial+pracTrialCorrect]; 
+    }else{
+    document.getElementById('two_sources').innerHTML='First Source:&nbsp' + sourceL + '&nbsp' + stimType[order[currentTrial]] 
+            + '&nbsp&nbsp&nbsp&nbsp&nbsp&nbsp\n\
+    &nbsp&nbsp&nbsp&nbsp&nbsp&nbsp' 
+            + 'Second Source:&nbsp' + sourceR + '&nbsp' +  stimType[order[currentTrial]]; 
+    }
+    
+    $('#secondEstimate').one('keyup', function(e){
+            secondEst = $("input#secondEstimate").val();
+            secondEst = parseInt(secondEst);
+            
+            if(e.keyCode === 13 && chk_val(secondEst)){
+            sourceOne = sourceOne.concat(source1);
+            sourceTwo = sourceTwo.concat(source2);    
+            sourcesLeft = sourcesLeft.concat(sourceL);
+            sourcesRight = sourcesRight.concat(sourceR);
+            badNum=0;
+            $('#secondEstimate').val(''); 
+            estimate2 = estimate2.concat(secondEst + ",");
+            var currentTime = new Date().getTime();
+            RTtwo = currentTime - startTrialTime2;
+            secondRT = secondRT.concat(RTtwo);  
+                preThankYou();}
+            
+        else if (e.keyCode === 13 && !chk_val(secondEst)){badNum=1; 
+            $('#secondEstimate').val('');
+            showProbs();
+        }
+        
+                else{
+                   showProbs(); 
+                }
+          });
+}
+
+carryOne=[];
+carryTwo=[];
+function preThankYou(){
+     
+     if(RTtwo>slowLimit){
+     hideAll();
+     $('#slow').show();
+            
+        $(document).one('keyup', function(e){ 
+            if(e.keyCode === 78){
+             currentTrial++;
+        resetIntervals();
+        
+        carryOne = carryOne.concat(carry1);
+        carryTwo = carryTwo.concat(carry2);
+        
+          if (currentTrial===0){
+            setTimeout(start(),3000);}
+      else if(currentTrial===(allStim.length)){setTimeout(ques(),3000);}
+      else{
+    setTimeout(cross(),3000);}
+            }
+            else{
+                preThankYou();
+            }
+        });
+     
+     }
+     else{
+         thankYou();
+     }
+}
+
+function resetIntervals(){
+                 
+        switch(trialType){         //carry over the unused two sources.........
+         case 1: 
+             carry1 = carry1temp;
+             carry2 = carry2temp;
+             
+             if(currentTrial>0){
+               interval_carry = interval2temp1 - interval1temp1;
+               
+                            if(interval_carry<0){
+                 carry1 = carry1 - interval_carry;
+             }
+             else{
+                 carry2 = carry2 + interval_carry;
+             }
+             
+              }
+         break;
+        
+         case 2:
+             interval_carry = interval1temp1 + interval1temp2;
+             carry1 = carry1temp + interval_carry;
+         break;
+         
+         case 3: 
+             interval_carry = interval2temp1 + interval2temp2;
+             carry2 = carry2temp + interval_carry;
+         break;                   
+        }
+        
+                if((carry2-carry1)<0){
+            carry1 = carry1 - carry2;
+            carry2 = 0;
+        } else if ((carry2-carry1)>0){
+            carry2 = carry2 - carry1;
+            carry1 = 0;
+        } else if ((carry2 - carry1)===0){
+            carry1 = 0; carry2 = 0;
+        }
+}
+
+    function thankYou(){
+    hideAll();
+     //$('#thankYou').show();
+      currentTrial++;
+      
+              if((carry2-carry1)<0){
+            carry1 = carry1 - carry2;
+            carry2 = 0;
+        } else if ((carry2-carry1)>0){
+            carry2 = carry2 - carry1;
+            carry1 = 0;
+        } else if ((carry2 - carry1)===0){
+            carry1 = 0; carry2 = 0;
+        }
+      
+        carryOne = carryOne.concat(carry1);
+        carryTwo = carryTwo.concat(carry2);
+      
+      if (currentTrial===0){
+          if(debug===1){
+          currentTrial=(allStim.length-2);} //for debugging goes straight to questionnaire**********************
+            window.setTimeout(start,1000);}
+      else if(currentTrial===(allStim.length)){window.setTimeout(ques,1000);}
+      else{
+    window.setTimeout(cross,300);}
+}
+
+function ques(){
+     hideAll();
+     if(debug===1){terminateExp(); return;}
+     $('#ques').show();
+     
+             $(document).one('keyup',function(e){
+            key  = e.keyCode;
+            if(key === 13){
+                lotr();
+            $(window).scrollTop(0);}
+                else{
+                   ques(); 
+                }
+          });
+}
+
+    lotrAns=[];
+function lotr(){
+    window.scrollTo(0,0);
+    hideAll();
+    $('#lotr').show();
+    $(window).scrollTop(0);  window.scrollTo(0,0);
+    //alert("Please read the instructions carefully and answer all the questions.");
+}
+
+    bdiAns=[];
+function bdi(){
+        window.scrollTo(0,0);
+    hideAll();
+    
+        if(!$('input[name=q1]:checked', '#lotr').is(':checked') || !$('input[name=q2]:checked', '#lotr').is(':checked')
+             || !$('input[name=q3]:checked', '#lotr').is(':checked') || !$('input[name=q4]:checked', '#lotr').is(':checked')
+              || !$('input[name=q5]:checked', '#lotr').is(':checked') || !$('input[name=q6]:checked', '#lotr').is(':checked')
+               || !$('input[name=q7]:checked', '#lotr').is(':checked') || !$('input[name=q8]:checked', '#lotr').is(':checked')
+                || !$('input[name=q9]:checked', '#lotr').is(':checked') || !$('input[name=q10]:checked', '#lotr').is(':checked')
+            ) 
+    {console.log('bad lotr'); lotr(); alert("Please answer the whole form.");return;}
+    
+    lotrAns = lotrAns.concat($('input[name=q1]:checked', '#lotr').val()); lotrAns = lotrAns.concat($('input[name=q2]:checked', '#lotr').val());
+    lotrAns = lotrAns.concat($('input[name=q3]:checked', '#lotr').val()); lotrAns = lotrAns.concat($('input[name=q4]:checked', '#lotr').val());    
+    lotrAns = lotrAns.concat($('input[name=q5]:checked', '#lotr').val()); lotrAns = lotrAns.concat($('input[name=q6]:checked', '#lotr').val());
+    lotrAns = lotrAns.concat($('input[name=q7]:checked', '#lotr').val()); lotrAns = lotrAns.concat($('input[name=q8]:checked', '#lotr').val());
+    lotrAns = lotrAns.concat($('input[name=q9]:checked', '#lotr').val()); lotrAns = lotrAns.concat($('input[name=q10]:checked', '#lotr').val());
+    
+    debrief();
+    //$('#bdi').show();   
+    $(window).scrollTop(0);
+    }
+
+function debrief(){
+    hideAll();
+    $(window).scrollTop(0);
+    
+   //         if(!$('input[name=q1]:checked', '#bdi').is(':checked') || !$('input[name=q2]:checked', '#bdi').is(':checked')
+   //          || !$('input[name=q3]:checked', '#bdi').is(':checked') || !$('input[name=q4]:checked', '#bdi').is(':checked')
+   //           || !$('input[name=q5]:checked', '#bdi').is(':checked') || !$('input[name=q6]:checked', '#bdi').is(':checked')
+   //            || !$('input[name=q7]:checked', '#bdi').is(':checked') || !$('input[name=q8]:checked', '#bdi').is(':checked')
+   //             || !$('input[name=q9]:checked', '#bdi').is(':checked') || !$('input[name=q10]:checked', '#bdi').is(':checked')
+   //       ||!$('input[name=q11]:checked', '#bdi').is(':checked') || !$('input[name=q12]:checked', '#bdi').is(':checked')
+   //          || !$('input[name=q13]:checked', '#bdi').is(':checked') || !$('input[name=q14]:checked', '#bdi').is(':checked')
+   //           || !$('input[name=q15]:checked', '#bdi').is(':checked') || !$('input[name=q16]:checked', '#bdi').is(':checked')
+   //            || !$('input[name=q17]:checked', '#bdi').is(':checked') || !$('input[name=q18]:checked', '#bdi').is(':checked')
+   //             || !$('input[name=q19]:checked', '#bdi').is(':checked') || !$('input[name=q20]:checked', '#bdi').is(':checked')
+    //            || !$('input[name=q21]:checked', '#bdi').is(':checked')
+    //        ) 
+    //{console.log('bad bdi'); bdi(); alert("Please answer the whole form.");return;}
+    
+    bdiAns = bdiAns.concat($('input[name=q1]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q2]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q3]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q4]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q5]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q6]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q7]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q8]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q9]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q10]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q11]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q12]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q13]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q14]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q15]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q16]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q17]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q18]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q19]:checked', '#bdi').val()); bdiAns = bdiAns.concat($('input[name=q20]:checked', '#bdi').val());
+    bdiAns = bdiAns.concat($('input[name=q21]:checked', '#bdi').val()); 
+    
+    $('#debrief').show();  
+}
+
+function debrief_chk(){
+    hideAll();
+    $(window).scrollTop(0);
+    
+         if(!$("#debrief1").val() || !$("#debrief2").val() || !$("#debrief3").val() 
+                 || !$("#debrief4").val() || !$("#debrief5").val()
+                 || !$('input[name=debrief6]:checked', '#debrief').val()
+                 || !$('input[name=debrief7]:checked', '#debrief').val()) 
+    {console.log('bad debrief'); debrief(); 
+        alert("Please answer the whole form. At least a short answer for each question.");
+        return;}
+    
+    terminateExp();
+}
+
+debrief1=[]; debrief2=[]; debrief3=[]; debrief4=[]; debrief5=[]; 
+debrief6=[]; debrief7=[]; debrief8=[]; 
+finishFS=[]; startFS=[];
+function terminateExp(){
+    hideAll();
+    debrief1 = $('#debrief1').val(); debrief2 = $('#debrief2').val();
+    debrief3 = $('#debrief3').val(); debrief4 = $('#debrief4').val(); debrief5 = $('#debrief5').val();
+    debrief6 = $('input[name=debrief6]:checked', '#debrief').val();
+    debrief7 = $('input[name=debrief7]:checked', '#debrief').val();
+    debrief8 = $('#debrief8').val();
+    
+    finishFS = $(document).fullScreen();
+    giveNum();
+}
+
+var data; var code; var completed=0;
+function giveNum(){
+    hideAll();
+    expRunning = false;
+//$(document).fullScreen(false);
+completed = 1;
+getCode();
+setTimeout(update,1000);
+}
+
+function getCode()
+{
+    $.ajax({
+	type: "POST",
+	url: "https://experiments.affectivebrain.com/getCode.php",
+        data: {
+        'sub': sub
+	},
+        success: function(resp3) {
+        code = resp3;
+        code = parseFloat(resp3) * 10000;
+        code = Math.floor(code);
+        code = code.toString();
+        code = code + code;
+        }
+});
+}
+
+function update(){
+    //$('#turkNum').show();
+    endExp = new Date();
+    endExpTime = new Date().getTime();
+    expLength = endExpTime - startExpTime;
+    data = "||---sub:" + sub + "||---age:" + age + "||---sex:" + sex + "||---education:" + education
+    + "||---marital:" + marital + "||---employment:" + employment + "||---income:" + income + "||---politics:" + politics
+    + "||---other_politics:" + other_politics
+    + "||---envQues:" + envQues
+            + "||---firstRT:" + firstRT + "||---secondRT:" + secondRT
+    + "||---firstEstimate:" + estimate1 + "||---secondEstimate:" + estimate2
+    + "||---sourcesLeft:" + sourcesLeft + "||---sourcesRight:" + sourcesRight + "||---trialOrder:" + order
+    + "||---lotr:" + lotrAns + "||---bdi:" + bdiAns
+    + "||---expDuration:" + expLength + "||---startExp:" + startExp + "||---endExp:" + endExp + "||---code:" + code
+    + "||---startFS:" + startFS + "||---finishFS:" + finishFS
+    + "||---debrief1:" + debrief1 + "||---debrief2:" + debrief2 + "||---debrief3:" + debrief3
+    + "||---debrief4:" + debrief4 + "||---debrief5:" + debrief5 +
+    "||---debrief6:" + debrief6 + "||---debrief7:" + debrief7 + "||---debrief8:" + debrief8 +
+                "||---carry1:" + carryOne + "||---carry2:" + carryTwo + "||---trialType:" + trialTypez
+        + "||---source1:" + sourceOne + "||---source2:" + sourceTwo
+        + "||---interval1:" + intervalOne + "||---interval2:" + intervalTwo;
+    
+        $.ajax({
+	type: "POST",
+	url: "https://experiments.affectivebrain.com/submitdata2.php",
+	data: {
+	    'mturk_id': code,//mturk_id,
+            'sub': sub,
+            'completed': completed,
+            'data': data
+	},
+        success: function(resp) {
+            console.log(resp);
+        document.getElementById('turkNum').innerHTML= "Please copy this code to claim your compensation from the researchers: " + code;
+	$('#turkNum').show();
+        $('#debriefEND').show();
+        }
+});
+
+//setTimeout($('#apologies').show(),5000);
+}
+
+</script>
+
+<style>
+.nonselectable {
+  -webkit-user-select: none;
+  -khtml-user-drag: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -moz-user-select: -moz-none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+}
+
+    
+.padded {
+	position: absolute;
+        margin: 10px;
+	color: black;
+	font-size: 14pt;
+        width:1000px;
+        left:100px;
+}
+
+.top{
+    position: absolute;
+    font-size: 16pt;
+    top: 25%;
+    left: 5%;
+    width: 80%;
+}
+
+.top2{
+    position: absolute;
+    font-size: 14pt;
+    top: 5%;
+    left: 5%;
+    width: 80%;
+}
+
+html {
+    height:100%;
+}
+
+#background {
+    text-align: center;
+    width: 100%; 
+    height: 100%; 
+    position: fixed;
+    left: 0px; 
+    top: 0px; 
+    z-index: -1;
+}
+
+.stretch {
+    margin: auto;
+    height:100%;
+}
+</style>
+
+<title>UCL ABL Decision Making Experiment</title>
+
+</head><body style="overflow: scroll;">
+    
+            <div id="consent_form" class="padded" style="display: block;">
+    	    	<h1>Welcome to our experiment!</h1>
+    	        <p>Please read all the instructions carefully.
+                <span id="consent" onclick="introExp()"> If you are reading the instructions carefully, 
+                    please click somewhere on this sentence, which will allow you to proceed. Otherwise, the proceed
+                button will deny you access to the experiment.</span><br></p>
+                  <!--  <p>Please do not do this HIT if you have done another with the same name:</p>-->
+                    <p><strong>Climate Change &amp; Decision Making Psychology Study</strong></p>
+                <p>You will be paid <b>3 GBP</b> for taking part in this study, which should take about 30 minutes.<br>
+               
+                </p><p>Please go into fullscreen mode. This experiment
+                can only be completed in fullscreen.</p>
+                <p>It is <b>VERY</b> important that you do NOT close the full screen window and you do NOT refresh the page.
+                    If you do that, unfortunately we won't be able to pay you.</p>
+                <p>Please accept the conditions before proceeding.</p>
+		<p><input name="consent2" id="consent2" value="" type="checkbox"> I agree to the above conditions.</p>
+                <button type="button" onclick="questions()">Proceed to experiment</button>
+            </div>
+
+    
+    <form id="questions" class="padded" style="display: none;">
+
+ Please input your gender and age.
+<br><br>
+
+<input name="sex" value="male" type="radio">Male<br>
+<input name="sex" value="female" type="radio">Female<br>
+<input name="sex" value="other" type="radio">Other<br><br>
+
+ Age: <input id="age" class="noEnterSubmit" type="text"><br><br>
+ 
+  Highest degree or level of school you have completed.
+<br><br>
+
+<input name="education" value="0" type="radio">Some secondary school<br>
+<input name="education" value="1" type="radio">GCSEs<br>
+<input name="education" value="2" type="radio">O-levels/A-levels<br>
+<input name="education" value="3" type="radio">Some university<br> 
+<input name="education" value="4" type="radio">University degree<br>
+<input name="education" value="5" type="radio">Professional degree<br>
+<input name="education" value="6" type="radio">Masters degree<br>
+<input name="education" value="7" type="radio">Doctorate degree<br><br>
+
+
+<!--<input type="radio" name="education" value="0">No schooling completed.<br>
+<input type="radio" name="education" value="1">Nursery school to 8th grade.<br>
+<input type="radio" name="education" value="2">Some high school, no diploma.<br>
+<input type="radio" name="education" value="3">High school graduate, diploma or the equivalent (for example: GED).<br> 
+<input type="radio" name="education" value="4">Some college credit, no degree.<br>
+<input type="radio" name="education" value="5">Trade/technical/vocational training.<br>
+<input type="radio" name="education" value="6">Associate degree.<br>
+<input type="radio" name="education" value="7">Bachelor's degree.<br>
+<input type="radio" name="education" value="8">Master's degree.<br>
+<input type="radio" name="education" value="9">Professional degree.<br>
+<input type="radio" name="education" value="10">Doctorate degree.<br><br>-->
+
+  Marital Status:
+<br><br>
+
+<input name="marital" value="single" type="radio">Single<br>
+<input name="marital" value="married" type="radio">Married or domestic partnership<br>
+<input name="marital" value="widowed" type="radio">Widowed<br>
+<input name="marital" value="divorced" type="radio">Divorced<br>
+<input name="marital" value="separated" type="radio">Separated<br><br>
+
+Employment Status:
+<br><br>
+<input name="employment" value="wages" type="radio">Employed for wages<br>
+<input name="employment" value="self" type="radio">Self-employed<br>
+<input name="employment" value="looking" type="radio">Out of work and looking for work<br>
+<input name="employment" value="unemployed" type="radio">Out of work and not currently looking for work<br>
+<input name="employment" value="homemaker" type="radio">A homemaker<br>
+<input name="employment" value="student" type="radio">A student<br>
+<input name="employment" value="military" type="radio">Military<br>
+<input name="employment" value="retired" type="radio">Retired<br>
+<input name="employment" value="unable" type="radio">Unable to work<br><br>
+
+Average Monthly Income (in GBP): <input id="income" class="noEnterSubmit" type="text">
+<br><br>
+
+When it comes to politics, which party do you most associate with?
+<br><br>
+<input name="politics" value="conservative" type="radio">Conservative<br>
+<input name="politics" value="labour" type="radio">Labour<br>
+<input name="politics" value="liberal_democrat" type="radio">Liberal Democrat<br>
+<input name="politics" value="scottish_party" type="radio">Scottish National Party<br>
+<input name="politics" value="other" type="radio">Other (Please specify below)<br>
+<input id="other_politics" class="noEnterSubmit" type="text"><br><br>
+
+
+<!--<input type="radio" name="politics" value="very_liberal">Very liberal<br>
+<input type="radio" name="politics" value="liberal">Liberal<br>
+<input type="radio" name="politics" value="slight_liberal">Slightly liberal<br>
+<input type="radio" name="politics" value="moderate">Moderate/Middle-of-the-road<br>
+<input type="radio" name="politics" value="slight_conservative">Slightly conservative<br>
+<input type="radio" name="politics" value="conservative">Conservative<br>
+<input type="radio" name="politics" value="very_conservative">Very conservative<br>
+<input type="radio" name="politics" value="unknwon">Do not know/not political<br>
+<input type="radio" name="politics" value="libertarian">Libertarian<br><br>-->
+
+
+<button type="button" onclick="javascript:chk_questions()">Submit Answer</button>
+
+<br><br>
+</form>
+    
+<form id="questions2" class="padded" style="display: none;">
+
+ Firstly, we are interested in your views on the environment, global warming and climate change.
+ Please fill out the questionnaire below, being as truthful as possible by selecting the option
+ that you feel best describes you. Remember, there are no right or wrong answers.
+<br><br>  
+
+1. How strongly do you believe that the climate is significantly changing?
+<br><br> 
+<input name="envQ1" value="0" type="radio">Not at all<br>
+<input name="envQ1" value="1" type="radio">A little<br>
+<input name="envQ1" value="2" type="radio">Moderately<br>
+<input name="envQ1" value="3" type="radio">Strongly<br>
+<input name="envQ1" value="4" type="radio">Very strongly<br><br>
+
+2. How strongly do you believe that global warming is happening?
+<br><br> 
+<input name="envQ2" value="0" type="radio">Not at all<br>
+<input name="envQ2" value="1" type="radio">A little<br>
+<input name="envQ2" value="2" type="radio">Moderately<br>
+<input name="envQ2" value="3" type="radio">Strongly<br>
+<input name="envQ2" value="4" type="radio">Very strongly<br><br>
+
+3. In your view, how strong is the human influence on global warming and climate change?
+<br><br> 
+<input name="envQ3" value="0" type="radio">Human activity has no impact<br>
+<input name="envQ3" value="1" type="radio">Human activity slightly contributes, but not significantly<br>
+<input name="envQ3" value="2" type="radio">Human activity contributes moderately<br>
+<input name="envQ3" value="3" type="radio">Human activity contributes significantly<br><br>
+
+4. How strongly do you believe that your own actions influence climate change and global warming?
+<br><br> 
+<input name="envQ4" value="0" type="radio">Not at all<br>
+<input name="envQ4" value="1" type="radio">A little<br>
+<input name="envQ4" value="2" type="radio">Moderately<br>
+<input name="envQ4" value="3" type="radio">Strongly<br>
+<input name="envQ4" value="4" type="radio">Very strongly<br><br>
+
+5. Do you recycle?
+<br><br> 
+<input name="envQ5" value="0" type="radio">Never.<br>
+<input name="envQ5" value="1" type="radio">Rarely.<br>
+<input name="envQ5" value="2" type="radio">I reuse most of recyclable items for other purposes.<br>
+<input name="envQ5" value="3" type="radio">I recycle when I remember.<br>
+<input name="envQ5" value="4" type="radio">Most of the time.<br>
+<input name="envQ5" value="5" type="radio">Always.<br><br>
+
+6. Do you try to reduce your production of daily trash?
+<br><br> 
+<input name="envQ6" value="0" type="radio">Never, I do what is most convenient.<br>
+<input name="envQ6" value="1" type="radio">No, but I buy recycled products when possible.<br>
+<input name="envQ6" value="2" type="radio">Sometimes, when I have the energy.<br>
+<input name="envQ6" value="3" type="radio">Always.<br><br>
+
+7. Would you buy an electric car?
+<br><br> 
+<input name="envQ7" value="0" type="radio">No<br>
+<input name="envQ7" value="1" type="radio">Maybe if I had more money or if they were big enough to hold my family.<br>
+<input name="envQ7" value="2" type="radio">Yes, my next car will be electric.<br>
+<input name="envQ7" value="3" type="radio">Yes, my current car is electric.<br><br>
+
+8. Do you turn out the lights when you leave the house?
+<br><br> 
+<input name="envQ8" value="0" type="radio">Never<br>
+<input name="envQ8" value="1" type="radio">Rarely<br>
+<input name="envQ8" value="2" type="radio">Sometimes<br>
+<input name="envQ8" value="3" type="radio">Often<br>
+<input name="envQ8" value="4" type="radio">All the time<br><br>
+
+9. How concerned are you about pollution?
+<br><br> 
+<input name="envQ9" value="0" type="radio">Not at all<br>
+<input name="envQ9" value="1" type="radio">A little<br>
+<input name="envQ9" value="2" type="radio">Moderately<br>
+<input name="envQ9" value="3" type="radio">Strongly<br>
+<input name="envQ9" value="4" type="radio">Very<br><br>
+
+10. How concerned are you about the Arctic melting?
+<br><br> 
+<input name="envQ10" value="0" type="radio">Not at all<br>
+<input name="envQ10" value="1" type="radio">A little<br>
+<input name="envQ10" value="2" type="radio">Moderately<br>
+<input name="envQ10" value="3" type="radio">Strongly<br>
+<input name="envQ10" value="4" type="radio">Very<br><br>
+
+11. How concerned are you about rising sea levels?
+<br><br> 
+<input name="envQ11" value="0" type="radio">Not at all<br>
+<input name="envQ11" value="1" type="radio">A little<br>
+<input name="envQ11" value="2" type="radio">Moderately<br>
+<input name="envQ11" value="3" type="radio">Strongly<br>
+<input name="envQ11" value="4" type="radio">Very<br><br>
+
+12. How knowledgable are you on the subject of climate change and global warming?
+<br><br> 
+<input name="envQ12" value="0" type="radio">Not at all<br>
+<input name="envQ12" value="1" type="radio">A little<br>
+<input name="envQ12" value="2" type="radio">Moderately<br>
+<input name="envQ12" value="3" type="radio">Strongly<br>
+<input name="envQ12" value="4" type="radio">Very<br><br>
+
+<button type="button" onclick="javascript:chk_questions2()">Submit Answer</button>
+
+</form>
+
+<center class="top">
+    
+    <h3 id="event" style="display: none;"></h3>
+        
+<div id="input_estimate" style="display: none;">
+    <br><br>
+  Your Answer: <input id="firstEstimate" type="text"><br>
+  <p>Please enter your answer and press the enter key.</p>
+</div>
+    
+    <h3 id="two_sources" style="display: none;"></h3>
+    
+<div id="input_estimate2" style="display: none;">
+    <br><br>
+  Your New Answer: <input id="secondEstimate" type="text"><br>
+  <p>After entering your updated answer, please press the enter key.</p>
+</div>
+    
+    <h3 id="thankYou" style="display: none;">Thank You!</h3>
+    
+    </center>
+    
+<div id="background">
+
+<img src="climatChange_files/Intro2.jpg" id="Intro2" class="stretch" alt="" style="display: none;">
+
+<img src="climatChange_files/Intro3.jpg" id="Intro3" class="stretch" alt="" style="display: none;">
+
+<img src="climatChange_files/Intro4.jpg" id="Intro4" class="stretch" alt="" style="display: none;">
+
+<div id="walkthrough" style="display: none;">
+    <br>
+    <h3>You will now be shown a trial and its explanation below. Press enter to go through the explanation.</h3>
+</div>
+
+
+<div id="examplez0" class="top2" style="display: none;">
+<br><br><br><br><br><br><br><br>
+<div style="left:10%;  font-size: 20pt">
+    <center>Welcome to our experiment!</center>
+    
+ <br><br>
+    
+<center>In this study, we are interested in people's beliefs about climate change and the impact of multiple sources
+    of information on those beliefs.
+</center>
+
+<br><br>
+
+<center>
+    Press enter to continue.</center>
+</div>
+</div>
+
+<div id="examplez1" class="top2" style="display: none;">
+    
+<div style="left:10%">
+    <center>In each trial you will be asked to answer a question, for example:</center>
+    
+ <br><br>
+ <u>Please answer</u>
+ <h3> By what percent has the carbon monoxide level in the atmosphere increased by? (%)</h3>
+<br><br>
+    
+<center>Your answers should always be between <b>5 and 95</b> and you need to type it in the box below.
+You will have 25 seconds to enter your answer. If you miss 5% of the trials we will not be able to provide compensation.
+</center>
+
+ <br><br>
+ <u>INPUT BOX</u>
+    <div id="input_estimate_example">
+    <br><br>
+  Your Answer: <input id="firstEstimate_example" type="text"><br>
+  <p>Please enter your answer and press the enter key.</p>
+</div>
+<br><br>
+</div>
+</div>
+
+<div id="examplez2" class="top2" style="display: none;">
+
+<div style="left:10">
+<center>You will then be presented with answers from two different studies named arbitrarily "First Source"
+and "Second Source".</center>
+    
+<center>Please Note: These sources change on every trial, sometimes they come
+from scientific articles, research institutions, non-government organizations and so on.
+All sources are commonly perceived as having the same level of reliability.
+Different sources may provide different answers as a by-product of the variability inherent to 
+the data gathering process.<br><br>
+</center>
+
+<u>For example:</u>
+<h3> By what percent has the carbon monoxide level in the atmosphere increased by? (%)</h3>
+<br>
+<h3 id="two_sources_example"></h3>
+<br><br>
+
+<center>After seeing these data enter your revised answer, a number between <b>5 and 95</b>, in the input box below.</center>
+
+    <div id="input_estimate2_example">
+    <br><br>
+  Your New Answer: <input id="secondEstimate_example" type="text"><br>
+  <p>After entering your updated answer, please press the enter key.</p>
+</div>
+<br><br>
+
+</div>
+</div>
+
+<div class="top2">
+<br><br><br><br><br>   
+
+<div id="examplez3" style="left: 10%; font-size: 20pt; display: none;">  
+    <h3>Practice Trials</h3><br><br>
+We will now start with 3 practice trials. Please press enter when you are ready to start.
+<br><br>
+Press enter to continue.
+</div>
+
+<div id="Start" style="left: 10%; font-size: 20pt; display: none;">
+We will now start the main part of the experiment. You will now be 
+required to do the same task as you did in the practice trials.
+In every trial you will be asked to give an appropriate value. Remember 
+you can only enter answers between <b>5 and 95</b>.
+<br><br>
+Press enter to continue.
+</div>
+
+<div id="ques" style="left: 10%; font-size: 20pt; display: none;">  
+    <h3>Questionnaires</h3><br><br>
+You have reached almost the end of the study. Please answer the 
+following questions from two questionnaires. Please do this carefully.
+<br><br>
+Press enter to continue.
+</div>
+</div>
+
+<img src="climatChange_files/Cross.jpg" id="Cross" class="stretch" alt="" style="display: none;">
+    </div>
+
+<form id="lotr" class="padded" style="display: none;">
+    <br><br>
+    <h3>Revised Life Orientation Test (LOT-R)</h3><br><br>
+    <strong>Instructions:</strong><br><br>
+    Please answer the following questions about yourself by indicating the extent of your agreement using the following scale:<br><br>
+    0 strongly disagree<br>
+    1 disagree<br>
+    2 neutral<br>
+    3 agree<br>
+    4 strongly agree<br><br>
+    Be as honest as you can throughout,and try not to let your responses
+ to one question influence your response to other questions.<br>
+    There are no right or wrong answers.<br>
+    <br><br>
+    1.	In uncertain, times I usually expect the best. <br>
+<input name="q1" value="0" type="radio">0 strongly disagree<br>
+<input name="q1" value="1" type="radio">1 disagree<br>
+<input name="q1" value="2" type="radio">2 neutral<br>
+<input name="q1" value="3" type="radio">3 agree<br>
+<input name="q1" value="4" type="radio">4 strongly agree<br>
+<br>
+    2.	It's easy for me to relax. <br>
+<input name="q2" value="0" type="radio">0 strongly disagree<br>
+<input name="q2" value="1" type="radio">1 disagree<br>
+<input name="q2" value="2" type="radio">2 neutral<br>
+<input name="q2" value="3" type="radio">3 agree<br>
+<input name="q2" value="4" type="radio">4 strongly agree<br>
+<br>
+    3.	If something can go wrong for me, it will. <br>
+<input name="q3" value="0" type="radio">0 strongly disagree<br>
+<input name="q3" value="1" type="radio">1 disagree<br>
+<input name="q3" value="2" type="radio">2 neutral<br>
+<input name="q3" value="3" type="radio">3 agree<br>
+<input name="q3" value="4" type="radio">4 strongly agree<br>
+<br>
+    4.	I'm always optimistic about my future. <br>
+<input name="q4" value="0" type="radio">0 strongly disagree<br>
+<input name="q4" value="1" type="radio">1 disagree<br>
+<input name="q4" value="2" type="radio">2 neutral<br>
+<input name="q4" value="3" type="radio">3 agree<br>
+<input name="q4" value="4" type="radio">4 strongly agree<br>
+<br>
+    5.	I enjoy my friends a lot. <br>
+<input name="q5" value="0" type="radio">0 strongly disagree<br>
+<input name="q5" value="1" type="radio">1 disagree<br>
+<input name="q5" value="2" type="radio">2 neutral<br>
+<input name="q5" value="3" type="radio">3 agree<br>
+<input name="q5" value="4" type="radio">4 strongly agree<br>
+<br>
+    6.	It's important for me to keep busy. <br>
+<input name="q6" value="0" type="radio">0 strongly disagree<br>
+<input name="q6" value="1" type="radio">1 disagree<br>
+<input name="q6" value="2" type="radio">2 neutral<br>
+<input name="q6" value="3" type="radio">3 agree<br>
+<input name="q6" value="4" type="radio">4 strongly agree<br>
+<br>
+    7.	I hardly ever expect things to go my way. <br>
+<input name="q7" value="0" type="radio">0 strongly disagree<br>
+<input name="q7" value="1" type="radio">1 disagree<br>
+<input name="q7" value="2" type="radio">2 neutral<br>
+<input name="q7" value="3" type="radio">3 agree<br>
+<input name="q7" value="4" type="radio">4 strongly agree<br>
+<br>
+    8.	I don't get upset too easily. <br>
+<input name="q8" value="0" type="radio">0 strongly disagree<br>
+<input name="q8" value="1" type="radio">1 disagree<br>
+<input name="q8" value="2" type="radio">2 neutral<br>
+<input name="q8" value="3" type="radio">3 agree<br>
+<input name="q8" value="4" type="radio">4 strongly agree<br>
+<br>
+    9.	I rarely count on good things happening to me. <br>
+<input name="q9" value="0" type="radio">0 strongly disagree<br>
+<input name="q9" value="1" type="radio">1 disagree<br>
+<input name="q9" value="2" type="radio">2 neutral<br>
+<input name="q9" value="3" type="radio">3 agree<br>
+<input name="q9" value="4" type="radio">4 strongly agree<br>
+<br>
+    10.	Overall, I expect more good things to happen to me than bad. <br>
+<input name="q10" value="0" type="radio">0 strongly disagree<br>
+<input name="q10" value="1" type="radio">1 disagree<br>
+<input name="q10" value="2" type="radio">2 neutral<br>
+<input name="q10" value="3" type="radio">3 agree<br>
+<input name="q10" value="4" type="radio">4 strongly agree<br>
+<br>
+<button type="button" onclick="javascript:bdi()">Proceed to next questionnaire</button>
+    
+</form>
+
+<form id="bdi" class="padded" style="display: none;">
+    <br><br>
+    
+    <strong>Beck Questionnaire</strong><br><br>
+
+Choose one statement from among the group of four statements in each question 
+that best describes how you have been feeling during the past few days. <br>
+Choose the number beside your choice. 
+<br><br>
+    Question 1 <br>
+<input name="q1" value="0" type="radio">0 I do not feel sad.<br>
+<input name="q1" value="1" type="radio">1 I feel sad.<br>
+<input name="q1" value="2" type="radio">2 I am sad all the time and I can't snap out of it. <br>
+<input name="q1" value="3" type="radio">3 I am so sad or unhappy that I can't stand it.<br>
+<br>
+    Question 2 <br>
+<input name="q2" value="0" type="radio">0 I am not particularly discouraged about the future. <br>
+<input name="q2" value="1" type="radio">1 I feel discouraged about the future. <br>
+<input name="q2" value="2" type="radio">2 I feel I have nothing to look forward to.  <br>
+<input name="q2" value="3" type="radio">3 I feel that the future is hopeless and that things cannot improve.<br>
+<br>
+ Question 3 <br>
+<input name="q3" value="0" type="radio">0 I do not feel like a failure.  <br>
+<input name="q3" value="1" type="radio">1 I feel I have failed more than the average person.  <br>
+<input name="q3" value="2" type="radio">2 As I look back on my life, all I can see is a lot of failure.   <br>
+<input name="q3" value="3" type="radio">3 I feel I am a complete failure as a person.<br>
+<br>
+ Question 4 <br>
+<input name="q4" value="0" type="radio">0 I get as much satisfaction out of things as I used to.   <br>
+<input name="q4" value="1" type="radio">1 I don't enjoy things the way I used to.   <br>
+<input name="q4" value="2" type="radio">2 I don't get any real satisfaction out of anything anymore.  <br>
+<input name="q4" value="3" type="radio">3 I am dissatisfied or bored with everything.<br>
+<br>
+Question 5 <br>
+<input name="q5" value="0" type="radio">0 I don't feel particularly guilty.   <br>
+<input name="q5" value="1" type="radio">1 I feel guilty a good part of the time.   <br>
+<input name="q5" value="2" type="radio">2 I feel quite guilty most of the time.   <br>
+<input name="q5" value="3" type="radio">3 I feel guilty all of the time.<br>
+<br>
+Question 6 <br>
+<input name="q6" value="0" type="radio">0 I don't feel I am being punished. <br>
+<input name="q6" value="1" type="radio">1 I feel I may be punished.   <br>
+<input name="q6" value="2" type="radio">2 I expect to be punished.   <br>
+<input name="q6" value="3" type="radio">3 I feel I am being punished.<br>
+<br>
+Question 7 <br>
+<input name="q7" value="0" type="radio">0 I don't feel disappointed in myself.  <br>
+<input name="q7" value="1" type="radio">1 I am disappointed in myself.    <br>
+<input name="q7" value="2" type="radio">2 I am disgusted with myself.    <br>
+<input name="q7" value="3" type="radio">3 I hate myself.<br>
+<br>
+Question 8 <br>
+<input name="q8" value="0" type="radio">0 I don't feel I am any worse than anybody else.   <br>
+<input name="q8" value="1" type="radio">1 I am critical of myself for my weaknesses or mistakes.   <br>
+<input name="q8" value="2" type="radio">2 I blame myself all the time for my faults.    <br>
+<input name="q8" value="3" type="radio">3 I blame myself for everything bad that happens.<br>
+<br>
+Question 9 <br>
+<input name="q9" value="0" type="radio">0 I don't have any thoughts of killing myself.   <br>
+<input name="q9" value="1" type="radio">1 I have thoughts of killing myself, but I would not carry them out.   <br>
+<input name="q9" value="2" type="radio">2 I would like to kill myself.    <br>
+<input name="q9" value="3" type="radio">3 I would kill myself if I had the chance. <br>
+<br>
+Question 10 <br>
+<input name="q10" value="0" type="radio">0 I don't cry any more than usual.   <br>
+<input name="q10" value="1" type="radio">1 I cry more now than I used to.   <br>
+<input name="q10" value="2" type="radio">2 I cry all the time now.   <br>
+<input name="q10" value="3" type="radio">3 I used to be able to cry, but now I can't cry even though I want to. <br>
+<br>
+Question 11 <br>
+<input name="q11" value="0" type="radio">0 I am no more irritated by things than I ever am.   <br>
+<input name="q11" value="1" type="radio">1 I am slightly more irritated now than usual.   <br>
+<input name="q11" value="2" type="radio">2 I am quite annoyed or irritated a good deal of the time.   <br>
+<input name="q11" value="3" type="radio">3 I feel irritated all the time now. <br>
+<br>
+Question 12 <br>
+<input name="q12" value="0" type="radio">0 I have not lost interest in other people.  <br>
+<input name="q12" value="1" type="radio">1 I am less interested in other people than I used to be.  <br>
+<input name="q12" value="2" type="radio">2 I have lost most of my interest in other people.    <br>
+<input name="q12" value="3" type="radio">3 I have lost all of my interest in other people. <br>
+<br>
+Question 13 <br>
+<input name="q13" value="0" type="radio">0 I make decisions about as well as I ever could. <br>
+<input name="q13" value="1" type="radio">1 I put off making decisions more than I used to.   <br>
+<input name="q13" value="2" type="radio">2 I have greater difficulty in making decisions than before.     <br>
+<input name="q13" value="3" type="radio">3 I can't make decisions at all anymore. <br>
+<br>
+Question 14 <br>
+<input name="q14" value="0" type="radio">0 I don't feel that I look any worse than I used to.  <br>
+<input name="q14" value="1" type="radio">1 I am worried that I am looking old or unattractive.   <br>
+<input name="q14" value="2" type="radio">2 I feel that there are permanent changes in my appearance that make me look unattractive.     <br>
+<input name="q14" value="3" type="radio">3 I believe that I look ugly. <br>
+<br>
+Question 15 <br>
+<input name="q15" value="0" type="radio">0 I can work about as well as before.   <br>
+<input name="q15" value="1" type="radio">1 It takes an extra effort to get started at doing something.   <br>
+<input name="q15" value="2" type="radio">2 I have to push myself very hard to do anything.     <br>
+<input name="q15" value="3" type="radio">3 I can't do any work at all. <br>
+<br>
+Question 16 <br>
+<input name="q16" value="0" type="radio">0 I can sleep as well as usual.    <br>
+<input name="q16" value="1" type="radio">1 I don't sleep as well as I used to.   <br>
+<input name="q16" value="2" type="radio">2 I wake up 1-2 hours earlier than usual and find it hard to get back to sleep.    <br>
+<input name="q16" value="3" type="radio">3 I wake up several hours earlier than I used to and cannot get back to sleep. <br>
+<br>
+Question 17 <br>
+<input name="q17" value="0" type="radio">0 I don't get more tired than usual.   <br>
+<input name="q17" value="1" type="radio">1 I get tired more easily than I used to.   <br>
+<input name="q17" value="2" type="radio">2 I get tired from doing almost anything.   <br>
+<input name="q17" value="3" type="radio">3 I am too tired to do anything.<br>
+<br>
+Question 18 <br>
+<input name="q18" value="0" type="radio">0 My appetite is no worse than usual.    <br>
+<input name="q18" value="1" type="radio">1 My appetite is not as good as it used to be.    <br>
+<input name="q18" value="2" type="radio">2 My appetite is much worse now.   <br>
+<input name="q18" value="3" type="radio">3 I have no appetite at all anymore. <br>
+<br>
+Question 19 <br>
+<input name="q19" value="0" type="radio">0 I haven't lost much weight, if any, lately.     <br>
+<input name="q19" value="1" type="radio">1 I have lost more than five pounds.    <br>
+<input name="q19" value="2" type="radio">2 I have lost more than ten pounds.   <br>
+<input name="q19" value="3" type="radio">3 I have lost more than fifteen pounds. (Score 0 if you have been purposefully trying to lose weight.)
+ <br>
+ <br>
+ Question 20 <br>
+<input name="q20" value="0" type="radio">0 I am no more worried about my health than usual.     <br>
+<input name="q20" value="1" type="radio">1 I am worried about physical problems such as aches and pains, or upset stomach, or constipation. <br>
+<input name="q20" value="2" type="radio">2 I am very worried about physical problems, and it's hard to think of much else.  <br>
+<input name="q20" value="3" type="radio">3 I am so worried about my physical problems that I cannot think about anything else.<br>
+<br>
+ Question 21 <br>
+<input name="q21" value="0" type="radio">0 I have not noticed any recent change in my interest in sex.    <br>
+<input name="q21" value="1" type="radio">1 I am less interested in sex than I used to be.  <br>
+<input name="q21" value="2" type="radio">2 I am much less interested in sex now.  <br>
+<input name="q21" value="3" type="radio">3 I have lost interested in sex completely.<br>
+<br>
+<button type="button" onclick="javascript:debrief()">Submit Answer</button>
+
+</form>
+
+<form id="debrief" class="padded" style="display: none;">
+    <u>Debriefing Questionnaire</u><br><br>
+Thank you for your participation in this study. <br>
+Please answer these questions as honestly as possible. <br><br><br>   
+    
+1.	Were the instructions clear? Were you at any stage confused or didn't
+ know what to do to perform the task? Give an example if necessary.
+<div><textarea id="debrief1" cols="30" rows="4"></textarea></div>
+<br>
+2.	What do you think the purpose of this experiment is?    
+<div><textarea id="debrief2" cols="30" rows="4"></textarea></div>
+<br>
+3.	Did you participate in similar version of this experiment (estimating likelihood of future life-events)?  
+If Yes, do you know what the purpose of the experiment was?
+<div><textarea id="debrief3" cols="30" rows="4"></textarea></div>
+<br>
+4.	What did you think about the answers presented? Did you think they were helpful or not? Did you know some of them already?   
+<div><textarea id="debrief4" cols="30" rows="4"></textarea></div>
+<br>
+5.	We presented two answers at the same time. How do you think this affected your learning from this information?   
+<div><textarea id="debrief5" cols="30" rows="4"></textarea></div>
+<br>
+6.	How familiar are you with the events presented to you?  <br> 
+<input name="debrief6" value="1" type="radio">1 Extremely unfamiliar (= I knew less than 20% of the events)  <br>
+<input name="debrief6" value="2" type="radio">2 Mostly unfamiliar (= I knew between 20% and 50% of the events)<br>
+<input name="debrief6" value="3" type="radio">3 Moderately familiar (= I knew between 50% and 70% of the events)<br>
+<input name="debrief6" value="4" type="radio">4 Mostly familiar (= I knew between 70% and 90% of the events)<br>
+<input name="debrief6" value="5" type="radio">5 Extremely familiar (= I knew more than 90% of the events)<br>
+<br>
+7.	Did you, at any point throughout the experiment, think that the experimenter had deceived you in any way? <br>   
+<input name="debrief7" value="no" type="radio">No<br>
+<input name="debrief7" value="yes" type="radio">Yes<br>
+<br>
+8.	If yes, please state at what point you thought this, why you thought this, and if it affected your behavior.    
+<div><textarea id="debrief8" cols="30" rows="4"></textarea></div>
+<br>
+    <button type="button" onclick="javascript:debrief_chk()">Submit Answer</button>
+</form>
+
+<div id="debriefEND" class="padded" style="display: none;">
+    <span id="turkNum" style="display: none;"></span>
+    <br><br><br>
+    <h3>DEBRIEFING</h3>
+
+<p>Thank you for taking part in this study, we are very grateful for your time. 
+    Here, we would like to detail the ideas behind the study, and the methods we used. </p>
+
+<p>People in general update their expectations about the future more in 
+response to good news than in response to bad news (Sharot, T. (2011). 
+Building on these findings, we are interested in whether this bias in 
+updating is affected (either increased or decreased)
+ when individuals encounter information from multiple sources and/or 
+about multiple events simultaneously. 
+Specifically, we want to compare how individuals update their beliefs in
+ 3 scenarios: (1) when they receive
+good news from two different sources/events; (2) when they receive bad 
+news from two different sources/events; 
+(3) when they receive conflicting information from two different 
+sources/events (one of which presents good news and the other bad).</p>
+
+
+
+<p>Please note that the statistics shown during this experiment were NOT genuine.
+It was necessary to manipulate these so that you were exposed to the 3 different types of scenario outlined above.
+You should therefore not attach credibility to any of the statistics that you saw.</p>
+
+<p>We will appreciate if you don't tell other students/friends that the statistics shown in this study are not genuine, 
+in case they participate in this experiment.</p>
+
+<p>If you have any concerns, or open questions about this study, please tell the experimenter or email the researchers:</p>
+
+Stepahnie Lazarro<br>
+s.lazzaro@ucl.ac.uk<br>
+<br>
+
+Sebastian Bobadilla<br>
+sebastian.suarez.12@ucl.ac.uk<br>
+<br><br>
+
+Again, we'd like to thank you for taking part in our research.
+</div>
+
+            <div id="busy" class="padded" style="display: none;">
+                <h1>Sorry, but either our servers are too busy to handle your request or we have filled our participant quota for this HIT. </h1>
+                <p>Thank you for your time, but we can't give you compensation for this reason . </p>
+                <p>Please do not attempt to do this HIT again as we can't use your data or compensate you. </p>
+                <p>Thank you and please consider participating in future studies on other topics.</p>
+            </div>
+
+                <div id="sorry2" class="padded" style="display: none;">
+                <h1>Sorry, but according to our database you have either done this experiment or a similar one before or have refreshed the page
+                    while doing the experiment. </h1>
+                <p>Thank you for your time, but we can't give you compensation for this reason . </p>
+                <p>Please do not attempt to do this HIT again as we can't use your data or compensate you. </p>
+                <p>Thank you and please consider participating in future studies on other topics.</p>
+            </div>
+
+             <div id="sorry3" class="padded" style="display: none;">
+                <h1>Sorry, but you took more than an hour to finish the experiment. </h1>
+                <p>Thank you for your time, but we can't give you compensation for this reason . </p>
+                <p>Please do not attempt to do this HIT again as we can't use your data or compensate you. </p>
+                <p>Thank you and please consider participating in future studies on other topics.</p>
+            </div>
+
+            <div id="noconsent" class="padded" style="display: none;">
+                <h1>You haven't read the instructions carefully!</h1>
+                <p>We apologize, but we can't give you compensation for your participation in this experiment.</p>
+                <p>Please do not attempt to do this experiment again. We would very much like to have you as a participant
+                for future studies.</p>
+            </div>
+
+            <div id="underAge" class="padded" style="display: none;">
+                <h1>Sorry but you may not do this experiment if you are under 18. </h1>
+                <p>Please do not attempt to do this experiment again. We would very much like to have you as a participant
+                for future studies where people under the age of 18 may take part.</p>
+                <p>We apologize, but we can't give you the full amount of money.</p>
+            </div>
+
+            <div id="slow" class="padded" style="display: none;">
+                <h1>Sorry but you took more than 25 seconds on this trial which makes this trial invalid. </h1>
+                <p>Please try to stay within the time limit.</p>
+                <p>Remember that if you accumulate 5% of missed trials you will not be compensated.</p>
+                <p>Press the "N" key to continue to the next trial.</p>
+            </div>
+
+            <div id="valid" class="padded" style="display: none;">
+                <h1>Sorry but you put in an invalid answer. </h1>
+                <p>Please put in a number between 5 and 95</p>
+                <p>Press the "N" key to continue to the next trial.</p>
+            </div>
+
+<div id="validNum" style="display: none;"></div>
+
+<h3 id="alert" style="display: none;">Please enter a valid answer (number between 5 and 95).</h3>
+
+<div id="apologies" style="display: none;">If the mturk code did not show up then just type in HONOR as the code.</div>
+</body></html>
